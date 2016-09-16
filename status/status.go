@@ -38,8 +38,8 @@ type ServerStatus struct {
 
 const timeout = 200 * time.Millisecond
 
-func QueryServer(ip string, port string) (ServerStatus, error) {
-	conn, connErr := net.Dial("udp4", ip + ":" + port)
+func query(ip string, port string) (ServerStatus, error) {
+	conn, connErr := net.Dial("udp", ip + ":" + port)
 	if connErr != nil {
 		return ServerStatus{}, connErr
 	}
