@@ -61,7 +61,6 @@ func QueryServer(ip string, port string) (ServerStatus, error) {
 
 func getToken(conn net.Conn) (int32, error) {
 	handshake := packetHead{0xFE, 0xFD, 0x09, 1}
-
 	conn.SetWriteDeadline(time.Now().Add(timeout))
 	_, writeError := conn.Write(handshake.bytes())
 	if writeError != nil {
@@ -87,7 +86,6 @@ func getToken(conn net.Conn) (int32, error) {
 
 func getStats(conn net.Conn, session int32) (string, error) {
 	request := queryPacket{packetHead{0xFE, 0xFD, 0x00, 1}, session, 0}
-
 	_, writeErr := conn.Write(request.bytes())
 	if writeErr != nil {
 		return "", writeErr
@@ -100,8 +98,7 @@ func getStats(conn net.Conn, session int32) (string, error) {
 		return "", readErr
 	}
 
-	response := string(buff[16:count])
-	return response, nil
+	return string(buff[16:count]), nil
 }
 
 func parseResponse(payload string) ServerStatus {
@@ -124,12 +121,13 @@ func parseResponse(payload string) ServerStatus {
 
 func parsePlayerProfiles(raw []string, pos int) profile.Profiles {
 	players := make([]string, len(raw) - pos)
+
 	var index = 0
 	for ; pos + 1 < len(raw); pos++ {
 		value := raw[pos]
 		if value == "\x01player_" {
 			// Full token is '\x00\x01player_\x00', but 'raw' was split on \x00 so
-			// next string will be empty. Players array will follow
+			// next string will be empty. Players array will follow, and ends on first empty element
 			pos += 1
 		} else if value == "" {
 			break
@@ -138,6 +136,7 @@ func parsePlayerProfiles(raw []string, pos int) profile.Profiles {
 			index++
 		}
 	}
+
 	return profile.LookupProfiles(players[0:index])
 }
 
