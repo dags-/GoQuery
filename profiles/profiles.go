@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+	"github.com/dags-/goquery/utils"
 )
 
 const mojangApi = "https://api.mojang.com/profiles/minecraft"
@@ -45,24 +46,9 @@ func LookupProfile(players ...string) Profiles {
 }
 
 func (profiles *Profiles) ToJson() string {
-	return toJson(profiles, false)
+	return queryutils.ToJson(profiles, false)
 }
 
 func (profiles *Profiles) ToPrettyJson() string {
-	return toJson(profiles, true)
-}
-
-func toJson(input interface{}, pretty bool) string {
-	var prefix, indent = "", ""
-	if pretty {
-		indent = "    "
-	}
-	buffer := bytes.Buffer{}
-	encoder := json.NewEncoder(&buffer)
-	encoder.SetIndent(prefix, indent)
-	err := encoder.Encode(input)
-	if err != nil {
-		return ""
-	}
-	return string(buffer.Bytes())
+	return queryutils.ToJson(profiles, true)
 }
