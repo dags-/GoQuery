@@ -12,7 +12,7 @@ type ServerQuery struct {
 type CachedServerQuery struct {
 	ServerQuery
 	expireTime     time.Duration
-	CacheTimestamp time.Time
+	cacheTimestamp time.Time
 	cachedStatus   ServerStatus
 	cachedError    error
 }
@@ -50,7 +50,7 @@ func (serverQuery CachedServerQuery) ExpireAfter(expireTime time.Duration) Cache
 }
 
 func (serverQuery *CachedServerQuery) Expired() bool {
-	return time.Now().Sub(serverQuery.CacheTimestamp) > serverQuery.expireTime
+	return time.Now().Sub(serverQuery.cacheTimestamp) > serverQuery.expireTime
 }
 
 func (serverQuery *CachedServerQuery) Poll() (ServerStatus, error) {
@@ -61,6 +61,6 @@ func (serverQuery *CachedServerQuery) Poll() (ServerStatus, error) {
 
 	// query server for new status
 	serverQuery.cachedStatus, serverQuery.cachedError = query(serverQuery.ip, serverQuery.port)
-	serverQuery.CacheTimestamp = time.Now()
+	serverQuery.cacheTimestamp = time.Now()
 	return serverQuery.cachedStatus, serverQuery.cachedError
 }
