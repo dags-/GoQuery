@@ -1,7 +1,7 @@
 package status
 
 import (
-	"github.com/dags-/goquery/profiles"
+	"github.com/dags-/goquery/profile"
 	"github.com/dags-/goquery/utils"
 	"net"
 	"strconv"
@@ -33,18 +33,10 @@ type ServerStatus struct {
 	Max      int32
 	IP       string
 	Port     int32
-	Players  profiles.Profiles
+	Players  profile.Profiles
 }
 
 const timeout = 200 * time.Millisecond
-
-func (serverStatus *ServerStatus) ToJson() string {
-	return queryutils.ToJson(serverStatus, false)
-}
-
-func (serverStatus *ServerStatus) ToPrettyJson() string {
-	return queryutils.ToJson(serverStatus, true)
-}
 
 func QueryServer(ip string, port string) (ServerStatus, error) {
 	conn, connErr := net.Dial("udp4", ip + ":" + port)
@@ -64,23 +56,19 @@ func QueryServer(ip string, port string) (ServerStatus, error) {
 		return ServerStatus{}, statsErr
 	}
 
-	serverStatus := parseResponse(response)
-
-	return serverStatus, nil
+	return parseResponse(response), nil
 }
 
 func getToken(conn net.Conn) (int32, error) {
 	handshake := packetHead{0xFE, 0xFD, 0x09, 1}
-	packet := queryutils.ToBytes(handshake)
 
 	conn.SetWriteDeadline(time.Now().Add(timeout))
-	_, writeError := conn.Write(packet)
+	_, writeError := conn.Write(handshake.bytes())
 	if writeError != nil {
 		return 0, writeError
 	}
 
 	buff := make([]byte, 32)
-
 	conn.SetReadDeadline(time.Now().Add(timeout))
 	count, readErr := conn.Read(buff)
 	if readErr != nil || count == 0 {
@@ -89,7 +77,6 @@ func getToken(conn net.Conn) (int32, error) {
 
 	length := 5
 	for ; (length < count) && (buff[length] != 0); length++ {}
-
 	token, err := strconv.Atoi(string(buff[5:length]))
 	if err != nil {
 		return 0, err
@@ -100,15 +87,13 @@ func getToken(conn net.Conn) (int32, error) {
 
 func getStats(conn net.Conn, session int32) (string, error) {
 	request := queryPacket{packetHead{0xFE, 0xFD, 0x00, 1}, session, 0}
-	packet := queryutils.ToBytes(request)
 
-	_, writeErr := conn.Write(packet)
+	_, writeErr := conn.Write(request.bytes())
 	if writeErr != nil {
 		return "", writeErr
 	}
 
 	buff := make([]byte, 8192)
-
 	conn.SetReadDeadline(time.Now().Add(timeout))
 	count, readErr := conn.Read(buff)
 	if readErr != nil || count == 0 {
@@ -127,43 +112,17 @@ func parseResponse(payload string) ServerStatus {
 		key := raw[i]
 		value := raw[i + 1]
 		if key == "" {
-			serverInfo.parsePlayers(raw, i + 1)
+			serverInfo.Players = parsePlayerProfiles(raw, i + 1)
 			break
 		} else {
-			serverInfo.parseKeyVal(key, value)
+			serverInfo.setValue(key, value)
 		}
 	}
 
 	return serverInfo
 }
 
-func (serverInfo *ServerStatus) parseKeyVal(key string, value string) {
-	// Not sure if there's a less pants way of doing this
-	switch key {
-	case "hostname":
-		serverInfo.MOTD = value
-	case "gametype":
-		serverInfo.GameType = value
-	case "game_id":
-		serverInfo.GameId = value
-	case "version":
-		serverInfo.Version = value
-	case "plugins":
-		serverInfo.Plugins = value
-	case "map":
-		serverInfo.Map = value
-	case "numplayers":
-		serverInfo.Online = queryutils.ParseInt(value)
-	case "maxplayers":
-		serverInfo.Max = queryutils.ParseInt(value)
-	case "hostport":
-		serverInfo.Port = queryutils.ParseInt(value)
-	case "hostip":
-		serverInfo.IP = value
-	}
-}
-
-func (serverInfo *ServerStatus) parsePlayers(raw []string, pos int) {
+func parsePlayerProfiles(raw []string, pos int) profile.Profiles {
 	players := make([]string, len(raw) - pos)
 	var index = 0
 	for ; pos + 1 < len(raw); pos++ {
@@ -173,12 +132,53 @@ func (serverInfo *ServerStatus) parsePlayers(raw []string, pos int) {
 			// next string will be empty. Players array will follow
 			pos += 1
 		} else if value == "" {
-			// Empty string in player array signifies it's end
 			break
 		} else {
 			players[index] = value
 			index++
 		}
 	}
-	serverInfo.Players = profiles.LookupProfiles(players[0:index])
+	return profile.LookupProfiles(players[0:index])
+}
+
+func (serverStatus *ServerStatus) setValue(key string, value string) {
+	// Not sure if there's a less pants way of doing this
+	switch key {
+	case "hostname":
+		serverStatus.MOTD = value
+	case "gametype":
+		serverStatus.GameType = value
+	case "game_id":
+		serverStatus.GameId = value
+	case "version":
+		serverStatus.Version = value
+	case "plugins":
+		serverStatus.Plugins = value
+	case "map":
+		serverStatus.Map = value
+	case "numplayers":
+		serverStatus.Online = queryutils.ParseInt(value)
+	case "maxplayers":
+		serverStatus.Max = queryutils.ParseInt(value)
+	case "hostport":
+		serverStatus.Port = queryutils.ParseInt(value)
+	case "hostip":
+		serverStatus.IP = value
+	}
+}
+
+func (head *packetHead) bytes() []byte {
+	return queryutils.ToBytes(head)
+}
+
+func (request *queryPacket) bytes() []byte {
+	return queryutils.ToBytes(request)
+}
+
+func (serverStatus *ServerStatus) ToJson() string {
+	return queryutils.ToJson(serverStatus, false)
+}
+
+func (serverStatus *ServerStatus) ToPrettyJson() string {
+	return queryutils.ToJson(serverStatus, true)
 }
