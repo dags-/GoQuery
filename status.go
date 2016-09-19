@@ -32,7 +32,7 @@ func GetStatus(ip string, port string) Status {
 	}
 
 	token, tokenErr := token(conn)
-	if tokenErr != nil {
+	if tokenErr != nil && token != 0 {
 		conn.Close()
 		return Status{}
 	}
@@ -62,14 +62,9 @@ func token(conn net.Conn) (int32, error) {
 	}
 
 	length := 5
-	for ; (length < count) && (buff[length] != 0); length++ {
-	}
-	token, err := strconv.Atoi(string(buff[5:length]))
-	if err != nil {
-		return 0, err
-	}
+	for ; (length < count) && (buff[length] != 0); length++ {}
 
-	return int32(token), nil
+	return parseInt(string(buff[5:length])), nil
 }
 
 func stats(conn net.Conn, token int32) (string, error) {
@@ -132,20 +127,17 @@ func (serverStatus *Status) setValue(key string, value string) {
 }
 
 func players(raw []string, pos int) []string {
-	players := make([]string, len(raw) - pos)
-	index := 0
+	var start = pos
 	for ; pos < len(raw); pos++ {
 		value := raw[pos]
 		if value == "\x01player_" {
 			pos += 2
+			start = pos
 		} else if value == "" {
 			break
-		} else {
-			players[index] = value
-			index++
 		}
 	}
-	return players[0:index]
+	return raw[start:pos]
 }
 
 func parseInt(value string) int32 {
