@@ -27,7 +27,7 @@ func StartServer()  {
 			go fetchHeads(fetcher, profiles)
 
 			status.Players = profiles
-			fmt.Fprintf(writer, goquery.ToJson(status, false))
+			fmt.Fprintf(writer, goquery.ToJson(status, true))
 		}
 	})
 	http.ListenAndServe(":8080", nil)
