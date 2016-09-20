@@ -28,15 +28,25 @@ func NewHeadFetcher(root string, dir string, expire time.Duration, fileExtension
 	return HeadFetcher{target, expire, fileExtension}
 }
 
-func (fetcher HeadFetcher) FetchHeads(sessions ...Session) {
+func (fetcher *HeadFetcher) Fetch(uuid string) string {
+	expire := minTime(fetcher.expire)
+	path := getAbsolutePath(fetcher.targetDir, uuid, fetcher.extension)
+	if file, err := os.Stat(path); os.IsNotExist(err) || checkExpired(file, expire) {
+		session := GetSession(uuid)
+		return fetcher.FetchHead(session)
+	}
+	return path
+}
+
+func (fetcher *HeadFetcher) FetchHeads(sessions ...Session) {
 	for i := range sessions {
 		fetcher.FetchHead(sessions[i])
 	}
 }
 
-func (fetcher HeadFetcher) FetchHead(session Session) {
+func (fetcher *HeadFetcher) FetchHead(session Session) string {
 	expire := minTime(fetcher.expire)
-	path := getAbsolutePath(fetcher, session.Id)
+	path := getAbsolutePath(fetcher.targetDir, session.Id, fetcher.extension)
 	if file, err := os.Stat(path); os.IsNotExist(err) || checkExpired(file, expire) {
 		if session.Skin != "" {
 			writeSkin(session.Skin, path)
@@ -44,6 +54,7 @@ func (fetcher HeadFetcher) FetchHead(session Session) {
 			writeSkin(steve, path)
 		}
 	}
+	return path
 }
 
 func writeSkin(url string, path string) {
@@ -67,8 +78,8 @@ func writeSkin(url string, path string) {
 	}
 }
 
-func getAbsolutePath(fetcher HeadFetcher, id string) string {
-	return fetcher.targetDir + id + fetcher.extension
+func getAbsolutePath(dir string, id string, extension string) string {
+	return dir + id + extension
 }
 
 func checkExpired(file os.FileInfo, expire time.Duration) bool {

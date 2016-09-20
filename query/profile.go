@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"bytes"
 	"encoding/json"
+	"sort"
 )
 
 type Profile struct {
@@ -11,6 +12,8 @@ type Profile struct {
 	Name string `json:"name"`
 	Legacy bool `json:"legacy,omitempty"`
 }
+
+type profileArray []Profile
 
 const mojangApi = "https://api.mojang.com/profiles/minecraft"
 
@@ -36,12 +39,25 @@ func GetProfiles(names ...string) []Profile {
 		return []Profile{}
 	}
 
-	var profiles []Profile
+	var profiles profileArray
 	decoder := json.NewDecoder(response.Body)
 	decodeErr := decoder.Decode(&profiles)
 
 	if decodeErr != nil {
 		return []Profile{}
 	}
+	sort.Sort(profiles)
 	return profiles
+}
+
+func (profiles profileArray) Len() int {
+	return len(profiles)
+}
+
+func (profiles profileArray) Less(i, j int) bool {
+	return profiles[i].Name < profiles[j].Id
+}
+
+func (profiles profileArray) Swap(i, j int)  {
+	profiles[i], profiles[j] = profiles[j], profiles[i]
 }

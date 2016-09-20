@@ -9,38 +9,24 @@ import (
 	"time"
 )
 
-type Status struct {
-	MOTD       string `json:"motd"`
-	GameType   string `json:"game_type"`
-	Game_Id    string `json:"game_id"`
-	Version    string `json:"version"`
-	Plugins    string `json:"plugins,omitempty"`
-	Map        string `json:"map"`
-	NumPlayers int32 `json:"online"`
-	MaxPlayers int32 `json:"max"`
-	IP         string `json:"ip"`
-	Port       int32 `json:"port"`
-	Players    interface{} `json:"players"`
-}
-
 const timeout = time.Duration(200 * time.Millisecond)
 
-func GetStatus(ip string, port string) Status {
+func GetStatus(ip string, port string) Data {
 	conn, connErr := net.Dial("udp", ip + ":" + port)
 	if connErr != nil {
-		return Status{}
+		return Data{}
 	}
 
 	token, tokenErr := token(conn)
 	if tokenErr != nil && token != 0 {
 		conn.Close()
-		return Status{}
+		return Data{}
 	}
 
 	resp, statsErr := stats(conn, token)
 	conn.Close()
 	if statsErr != nil {
-		return Status{}
+		return Data{}
 	}
 
 	return response(resp)
@@ -83,47 +69,22 @@ func stats(conn net.Conn, token int32) (string, error) {
 	return string(buff[16:count]), nil
 }
 
-func response(payload string) Status {
-	status := Status{}
+func response(payload string) Data {
+	status := Data{}
 	raw := strings.Split(payload, "\x00")
 
 	for i := 0; i + 1 < len(raw); i += 2 {
 		key := raw[i]
 		value := raw[i + 1]
 		if key == "" {
-			status.Players = players(raw, i + 1)
+			status.Put("players", players(raw, i + 1))
 			break
 		} else {
-			status.setValue(key, value)
+			status.Put(parseKeyValue(key, value))
 		}
 	}
 
 	return status
-}
-
-func (serverStatus *Status) setValue(key string, value string) {
-	switch key {
-	case "hostname":
-		serverStatus.MOTD = value
-	case "gametype":
-		serverStatus.GameType = value
-	case "game_id":
-		serverStatus.Game_Id = value
-	case "version":
-		serverStatus.Version = value
-	case "plugins":
-		serverStatus.Plugins = value
-	case "map":
-		serverStatus.Map = value
-	case "numplayers":
-		serverStatus.NumPlayers = parseInt(value)
-	case "maxplayers":
-		serverStatus.MaxPlayers = parseInt(value)
-	case "hostport":
-		serverStatus.Port = parseInt(value)
-	case "hostip":
-		serverStatus.IP = value
-	}
 }
 
 func players(raw []string, pos int) []string {
@@ -138,6 +99,32 @@ func players(raw []string, pos int) []string {
 		}
 	}
 	return raw[start:pos]
+}
+
+func parseKeyValue(key string, value string) (string, interface{}) {
+	switch key {
+	case "hostname":
+		return "motd", value
+	case "gametype":
+		return "game_type", value
+	case "game_id":
+		return "game_id", value
+	case "version":
+		return "version", value
+	case "plugins":
+		return "plugins", value
+	case "map":
+		return "map", value
+	case "numplayers":
+		return "online", parseInt(value)
+	case "maxplayers":
+		return "max", parseInt(value)
+	case "hostport":
+		return "port", parseInt(value)
+	case "hostip":
+		return "ip", value
+	}
+	return "", nil
 }
 
 func parseInt(value string) int32 {
