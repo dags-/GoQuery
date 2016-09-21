@@ -22,7 +22,10 @@ func IpAndPort(w http.ResponseWriter, r *http.Request)  {
 }
 
 func sendStatus(w http.ResponseWriter, r *http.Request, ip string, port string)  {
-	status, response := getStatus(ip, port)
+	var response interface{}
+
+	status := getStatus(ip, port)
+	response = status
 
 	if r.FormValue("uuid") == "true" {
 		players, _ := status["players"]
@@ -31,16 +34,16 @@ func sendStatus(w http.ResponseWriter, r *http.Request, ip string, port string) 
 		response = status
 	}
 
-	if val := r.FormValue("keys"); strings.HasPrefix(val, "[") && strings.HasSuffix(val, "]"){
-		keys := strings.Split(strings.Trim(val, "[]"), ",")
+	if val := r.FormValue("keys"); val != "" {
+		keys := strings.Split(val, ",")
 		status = status.Retain(keys...)
 		response = status
 	}
 
-	fmt.Fprintf(w, goquery.ToJson(response, true))
+	fmt.Fprintf(w, goquery.ToJson(response, r.FormValue("pretty") == "true"))
 }
 
-func getStatus(ip string, port string) (goquery.Data, interface{}) {
+func getStatus(ip string, port string) goquery.Data {
 	status := goquery.GetStatus(ip, port)
-	return status, status
+	return status
 }

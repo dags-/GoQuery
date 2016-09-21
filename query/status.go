@@ -92,8 +92,8 @@ func players(raw []string, pos int) []string {
 	for ; pos < len(raw); pos++ {
 		value := raw[pos]
 		if value == "\x01player_" {
-			pos += 2
-			start = pos
+			pos += 1
+			start = pos + 1
 		} else if value == "" {
 			break
 		}
