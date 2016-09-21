@@ -1,10 +1,10 @@
 package main
 
 import (
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"net/http"
-	"github.com/dags-/goquery/test/handler"
-	"github.com/gorilla/handlers"
+	"github.com/dags-/goquery/handler"
 )
 
 func main() {
