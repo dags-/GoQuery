@@ -13,7 +13,7 @@ var fetcher goquery.HeadFetcher
 
 func NewHeadServer() func(w http.ResponseWriter, r *http.Request) {
 	root, _ := os.Getwd()
-	fetcher = goquery.NewHeadFetcher(root, "/heads", time.Duration(12 * time.Hour), ".png", 64)
+	fetcher = goquery.NewHeadFetcher(root, "/heads", time.Duration(12 * time.Hour), ".png", 8)
 	return head
 }
 
