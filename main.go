@@ -23,13 +23,10 @@ func main() {
 	flag.StringVar(&ipWhitelist, "whitelist", "", "Whitelisted server IPs")
 	flag.Parse()
 
-	handler.SetWhitelist(ipWhitelist)
-
 	r := mux.NewRouter()
-	r.HandleFunc("/status/{ip}", handler.IpOnly)
-	r.HandleFunc("/status/{ip}/{port}", handler.IpAndPort)
 	r.HandleFunc("/head/{uuid}", handler.NewHeadServer(scale))
-
+	r.HandleFunc("/status/{ip}", handler.NewIPOnlyHandler(ipWhitelist))
+	r.HandleFunc("/status/{ip}/{port}", handler.NewIpAndPortHandler(ipWhitelist))
 	fmt.Println("Running on port", port)
 	http.ListenAndServe(":" + port, handlers.CORS()(r))
 }

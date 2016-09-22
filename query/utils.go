@@ -25,7 +25,9 @@ func (data Data) Retain(keys ...string) Data {
 }
 
 func (set Set) Add(val string) {
-	set[val] = true
+	if val != "" {
+		set[val] = true
+	}
 }
 
 func (set Set) Contains(val string) bool {
