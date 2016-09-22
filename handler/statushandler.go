@@ -19,7 +19,20 @@ type Status struct {
 	timestamp time.Time
 }
 
+var whitelist = goquery.Set{}
 var manager = QueryManager{make(map[string]Status), time.Duration(15 * time.Second)}
+
+func SetWhitelist(val string) {
+	if len(val) > 0 {
+		split := strings.Split(val, ",")
+		fmt.Println("Whitelisted IPs", split)
+		for i := range split {
+			whitelist.Add(split[i])
+		}
+	} else {
+		fmt.Println("IP whitelist is off")
+	}
+}
 
 func IpOnly(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
@@ -35,6 +48,11 @@ func IpAndPort(w http.ResponseWriter, r *http.Request) {
 }
 
 func sendStatus(w http.ResponseWriter, r *http.Request, ip string, port string) {
+	if !whitelist.Contains(ip) {
+		fmt.Println("Rejected query for", ip)
+		return
+	}
+
 	var response interface{}
 	uuid, keys := r.FormValue("uuid"), r.FormValue("keys")
 

@@ -14,15 +14,23 @@ import (
 func main() {
 	go handleStop()
 
+	var ipWhitelist string
 	var port string
+	var scale int
+
 	flag.StringVar(&port, "port", "8080", "Query port")
+	flag.IntVar(&scale, "scale", 8, "PNG scale")
+	flag.StringVar(&ipWhitelist, "whitelist", "", "Whitelisted server IPs")
 	flag.Parse()
-	fmt.Println("Running on port", port)
+
+	handler.SetWhitelist(ipWhitelist)
 
 	r := mux.NewRouter()
 	r.HandleFunc("/status/{ip}", handler.IpOnly)
 	r.HandleFunc("/status/{ip}/{port}", handler.IpAndPort)
-	r.HandleFunc("/head/{uuid}", handler.NewHeadServer())
+	r.HandleFunc("/head/{uuid}", handler.NewHeadServer(scale))
+
+	fmt.Println("Running on port", port)
 	http.ListenAndServe(":" + port, handlers.CORS()(r))
 }
 

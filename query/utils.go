@@ -8,6 +8,8 @@ import (
 
 type Data map[string]interface{}
 
+type Set map[string]bool
+
 func (data Data) Put(key string, val interface{}) {
 	if key != "" && val != "" && val != nil {
 		data[key] = val
@@ -20,6 +22,14 @@ func (data Data) Retain(keys ...string) Data {
 		result.Put(k, data[k])
 	}
 	return result
+}
+
+func (set Set) Add(val string) {
+	set[val] = true
+}
+
+func (set Set) Contains(val string) bool {
+	return len(set) == 0 || set[val]
 }
 
 func ToJson(input interface{}, pretty bool) string {

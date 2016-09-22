@@ -6,14 +6,15 @@ import (
 	"github.com/dags-/goquery/query"
 	"os"
 	"time"
-	"io/ioutil"
+	"fmt"
 )
 
 var fetcher goquery.HeadFetcher
 
-func NewHeadServer() func(w http.ResponseWriter, r *http.Request) {
+func NewHeadServer(scale int) func(w http.ResponseWriter, r *http.Request) {
 	root, _ := os.Getwd()
-	fetcher = goquery.NewHeadFetcher(root, "/heads", time.Duration(12 * time.Hour), ".png", 8)
+	fetcher = goquery.NewHeadFetcher(root, "/heads", time.Duration(12 * time.Hour), ".png", scale)
+	fmt.Println("Using PNG scale", scale)
 	return head
 }
 
@@ -21,6 +22,5 @@ func head(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	uuid := vars["uuid"]
 	path := fetcher.Fetch(uuid)
-	data, _ := ioutil.ReadFile(path)
-	w.Write(data)
+	http.ServeFile(w, r, path)
 }
