@@ -7,6 +7,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"sort"
 )
 
 const timeout = time.Duration(200 * time.Millisecond)
@@ -98,7 +99,9 @@ func players(raw []string, pos int) []string {
 			break
 		}
 	}
-	return raw[start:pos]
+	players := raw[start:pos]
+	sort.Strings(players)
+	return players
 }
 
 func parseKeyValue(key string, value string) (string, interface{}) {

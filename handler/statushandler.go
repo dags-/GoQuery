@@ -8,20 +8,20 @@ import (
 	"strings"
 )
 
-func IpOnly(w http.ResponseWriter, r *http.Request)  {
+func IpOnly(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	ip := vars["ip"]
 	sendStatus(w, r, ip, "25565")
 }
 
-func IpAndPort(w http.ResponseWriter, r *http.Request)  {
+func IpAndPort(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	ip := vars["ip"]
 	port := vars["port"]
 	sendStatus(w, r, ip, port)
 }
 
-func sendStatus(w http.ResponseWriter, r *http.Request, ip string, port string)  {
+func sendStatus(w http.ResponseWriter, r *http.Request, ip string, port string) {
 	var response interface{}
 
 	status := getStatus(ip, port)

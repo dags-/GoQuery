@@ -17,7 +17,7 @@ func NewHeadServer() func(w http.ResponseWriter, r *http.Request) {
 	return head
 }
 
-func head(w http.ResponseWriter, r *http.Request)  {
+func head(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	uuid := vars["uuid"]
 	path := fetcher.Fetch(uuid)

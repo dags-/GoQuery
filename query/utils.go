@@ -6,7 +6,7 @@ import (
 	"image"
 )
 
-type Data map[string] interface{}
+type Data map[string]interface{}
 
 func (data Data) Put(key string, val interface{}) {
 	if key != "" && val != "" && val != nil {
@@ -37,20 +37,20 @@ func ToJson(input interface{}, pretty bool) string {
 	return string(buffer.Bytes())
 }
 
-func drawScaledImage(target *image.RGBA, source image.Image, mask image.Rectangle) {
+func scaleImage(source image.Image, mask image.Rectangle, scale int) *image.RGBA {
 	maskWidth := mask.Max.X - mask.Min.X
 	maskHeight := mask.Max.Y - mask.Min.Y
-	scaleX := target.Bounds().Max.X / maskWidth
-	scaleY := target.Bounds().Max.X / maskHeight
+	target := image.NewRGBA(image.Rect(0, 0, maskWidth * scale, maskHeight * scale))
 	for x := 0; x < maskWidth; x++ {
 		for y := 0; y < maskHeight; y++ {
 			color := source.At(mask.Min.X + x, mask.Min.Y + y)
-			xPos, yPos := x * scaleX, y * scaleY
-			for targetX := 0; targetX < scaleX; targetX++ {
-				for targetY := 0; targetY < scaleY; targetY++ {
-					target.Set(xPos + targetX, yPos + targetY, color)
+			offsetX, offsetY := x * scale, y * scale
+			for toX := 0; toX < scale; toX++ {
+				for toY := 0; toY < scale; toY++ {
+					target.Set(offsetX + toX, offsetY + toY, color)
 				}
 			}
 		}
 	}
+	return target
 }

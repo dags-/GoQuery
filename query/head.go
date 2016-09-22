@@ -19,15 +19,15 @@ type HeadFetcher struct {
 	targetDir string
 	expire    time.Duration
 	extension string
-	size      int
+	scale     int
 }
 
-func NewHeadFetcher(root string, dir string, expire time.Duration, fileExtension string, size int) HeadFetcher {
+func NewHeadFetcher(root string, dir string, expire time.Duration, fileExtension string, scale int) HeadFetcher {
 	root = strings.TrimRight(root, separator)
 	dir = strings.Trim(dir, separator)
 	target := filepath.Clean(root + separator + dir) + separator
 	os.MkdirAll(target, os.ModeDir)
-	return HeadFetcher{target, expire, fileExtension, int(math.Max(float64(size), 8))}
+	return HeadFetcher{target, expire, fileExtension, int(math.Max(float64(scale), 1))}
 }
 
 func (fetcher *HeadFetcher) Path(uuid string) string {
@@ -49,15 +49,15 @@ func (fetcher *HeadFetcher) FetchHead(session Session) string {
 	path := getAbsolutePath(fetcher.targetDir, session.Id, fetcher.extension)
 	if file, err := os.Stat(path); os.IsNotExist(err) || checkExpired(file, expire) {
 		if session.Skin != "" {
-			writeHead(session.Skin, path, fetcher.size)
+			writeHead(session.Skin, path, fetcher.scale)
 		} else {
-			writeHead(steve, path, fetcher.size)
+			writeHead(steve, path, fetcher.scale)
 		}
 	}
 	return path
 }
 
-func writeHead(url string, path string, size int) {
+func writeHead(url string, path string, scale int) {
 	response, err := http.Get(url)
 	if err != nil {
 		return
@@ -68,12 +68,9 @@ func writeHead(url string, path string, size int) {
 		return
 	}
 
-	head := image.NewRGBA(image.Rect(0, 0, size, size))
-	helmet := image.NewRGBA(image.Rect(0, 0, size, size))
-
-	drawScaledImage(head, img, image.Rect(8, 8, 16, 16))
-	drawScaledImage(helmet, img, image.Rect(40, 8, 48, 16))
-	draw.Over.Draw(head, head.Rect, helmet, image.Pt(0, 0))
+	head := scaleImage(img, image.Rect(8, 8, 16, 16), scale)
+	helmet := scaleImage(img, image.Rect(40, 8, 48, 16), scale)
+	draw.Over.Draw(head, head.Bounds(), helmet, image.Pt(0, 0))
 
 	if out, err := os.Create(path); err == nil {
 		png.Encode(out, head)

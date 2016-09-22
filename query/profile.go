@@ -4,12 +4,13 @@ import (
 	"net/http"
 	"bytes"
 	"encoding/json"
+	"strings"
 	"sort"
 )
 
 type Profile struct {
-	Id   string `json:"id"`
-	Name string `json:"name"`
+	Id     string `json:"id"`
+	Name   string `json:"name"`
 	Legacy bool `json:"legacy,omitempty"`
 }
 
@@ -18,9 +19,9 @@ type profileArray []Profile
 const mojangApi = "https://api.mojang.com/profiles/minecraft"
 
 func Profiles(status interface{}) []Profile {
-	strings, ok := status.([]string)
+	names, ok := status.([]string)
 	if ok {
-		return GetProfiles(strings...)
+		return GetProfiles(names...)
 	}
 	return []Profile{}
 }
@@ -50,14 +51,18 @@ func GetProfiles(names ...string) []Profile {
 	return profiles
 }
 
+func (pfl Profile) Compare(other Profile) int {
+	return strings.Compare(pfl.Name, other.Name)
+}
+
 func (profiles profileArray) Len() int {
 	return len(profiles)
 }
 
 func (profiles profileArray) Less(i, j int) bool {
-	return profiles[i].Name < profiles[j].Id
+	return profiles[i].Name < profiles[j].Name
 }
 
-func (profiles profileArray) Swap(i, j int)  {
+func (profiles profileArray) Swap(i, j int) {
 	profiles[i], profiles[j] = profiles[j], profiles[i]
 }
