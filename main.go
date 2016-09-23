@@ -24,6 +24,8 @@ func main() {
 	flag.Parse()
 
 	r := mux.NewRouter()
+
+	r.NotFoundHandler = http.HandlerFunc(pageNotFound)
 	r.HandleFunc("/head/{uuid}", handler.NewHeadServer(scale))
 	r.HandleFunc("/status/{ip}", handler.NewIPOnlyHandler(ipWhitelist))
 	r.HandleFunc("/status/{ip}/{port}", handler.NewIpAndPortHandler(ipWhitelist))
@@ -43,4 +45,8 @@ func handleStop() {
 			break
 		}
 	}
+}
+
+func pageNotFound(w http.ResponseWriter, r *http.Request) {
+	http.ServeFile(w, r, "not_fount.html")
 }
