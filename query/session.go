@@ -50,6 +50,7 @@ func GetSession(id string) Session {
 func getSession(id string) mojangSession {
 	url := mojangSessionApi + id
 	response, err := http.Get(url)
+	defer response.Body.Close()
 
 	if err != nil {
 		return mojangSession{}

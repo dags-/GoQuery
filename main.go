@@ -30,6 +30,7 @@ func main() {
 	r.HandleFunc("/status/{ip}", handler.NewIPOnlyHandler(ipWhitelist))
 	r.HandleFunc("/status/{ip}/{port}", handler.NewIpAndPortHandler(ipWhitelist))
 	fmt.Println("Running on port", port)
+
 	http.ListenAndServe(":" + port, handlers.CORS()(r))
 }
 

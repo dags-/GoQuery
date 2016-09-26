@@ -14,18 +14,18 @@ const timeout = time.Duration(200 * time.Millisecond)
 
 func GetStatus(ip string, port string) Data {
 	conn, connErr := net.Dial("udp", ip + ":" + port)
+	defer conn.Close()
+
 	if connErr != nil {
 		return Data{}
 	}
 
 	token, tokenErr := token(conn)
 	if tokenErr != nil && token != 0 {
-		conn.Close()
 		return Data{}
 	}
 
 	resp, statsErr := stats(conn, token)
-	conn.Close()
 	if statsErr != nil {
 		return Data{}
 	}

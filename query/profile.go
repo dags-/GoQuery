@@ -35,6 +35,7 @@ func GetProfiles(names ...string) []Profile {
 	client := &http.Client{}
 	post, postErr := http.NewRequest("POST", mojangApi, bytes.NewBuffer(payload))
 	response, postErr := client.Do(post)
+	defer response.Body.Close()
 
 	if postErr != nil {
 		return []Profile{}
