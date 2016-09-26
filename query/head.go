@@ -46,7 +46,7 @@ func (fetcher *HeadFetcher) Fetch(uuid string) string {
 
 func (fetcher *HeadFetcher) FetchHead(session Session) string {
 	expire := minTime(fetcher.expire)
-	path := getAbsolutePath(fetcher.targetDir, session.Id, fetcher.extension)
+	path := fetcher.Path(session.Id)
 	if file, err := os.Stat(path); os.IsNotExist(err) || checkExpired(file, expire) {
 		if session.Skin != "" {
 			writeHead(session.Skin, path, fetcher.scale)
