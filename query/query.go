@@ -5,15 +5,19 @@ import (
 	"net"
 	"time"
 	"strings"
+	"fmt"
 )
 
 func GetStatus(ip string, port string) Status {
 	conn, connErr := net.Dial("udp", ip + ":" + port)
-	defer conn.Close()
 
 	if connErr != nil {
+		fmt.Println(ip, port)
+		fmt.Println(connErr)
 		return Status{}
 	}
+
+	defer conn.Close()
 
 	token, tokenErr := getToken(conn)
 	if tokenErr != nil && token != 0 {
