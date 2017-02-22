@@ -48,7 +48,7 @@ func serveStatus(wr http.ResponseWriter, rq *http.Request) {
 	if ip, ok := vars["ip"]; ok {
 		port := "25565"
 		pretty := rq.FormValue("pretty") == "true"
-		if _, ok := vars["port"]; !ok {
+		if _, ok := vars["port"]; ok {
 			port = vars["port"]
 		}
 		wr.Header().Set("Content-Type", "application/json; charset=UTF-8")
