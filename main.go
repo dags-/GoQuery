@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"os"
 	"fmt"
 	"flag"
@@ -15,12 +16,13 @@ func main() {
 	go handleStop()
 
 	var port string
-	flag.StringVar(&port, "port", "8080", "Query port")
+	flag.StringVar(&port, "port", "8085", "Query port")
 	flag.Parse()
 
 	router := mux.NewRouter()
-	router.HandleFunc("/status/{ip}", serveStatus)
-	router.HandleFunc("/status/{ip}/{port}", serveStatus)
+	router.HandleFunc("/status/{ip}", serveMincraftStatus)
+	router.HandleFunc("/status/{ip}/{port}", serveMincraftStatus)
+	router.HandleFunc("/discord/{id}", serveDiscordStatus)
 	router.NotFoundHandler = http.HandlerFunc(func(wr http.ResponseWriter, rq *http.Request) {
 		http.ServeFile(wr, rq, "notfound.html")
 	})
@@ -43,7 +45,7 @@ func handleStop() {
 	}
 }
 
-func serveStatus(wr http.ResponseWriter, rq *http.Request) {
+func serveMincraftStatus(wr http.ResponseWriter, rq *http.Request) {
 	vars := mux.Vars(rq)
 	if ip, ok := vars["ip"]; ok {
 		port := "25565"
@@ -55,5 +57,16 @@ func serveStatus(wr http.ResponseWriter, rq *http.Request) {
 		wr.WriteHeader(http.StatusOK)
 		status := goquery.GetStatus(ip, port)
 		status.ToJson(wr, pretty)
+	}
+}
+
+func serveDiscordStatus(wr http.ResponseWriter, rq *http.Request) {
+	vars := mux.Vars(rq)
+	if id, ok := vars["id"]; ok {
+		url := fmt.Sprintf("http://discordapp.com/api/guilds/%s/widget.json", id)
+		if resp, err := http.Get(url); err == nil {
+			defer resp.Body.Close()
+			io.Copy(wr, resp.Body)
+		}
 	}
 }
