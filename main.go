@@ -16,7 +16,7 @@ func main() {
 	go handleStop()
 
 	var port string
-	flag.StringVar(&port, "port", "8085", "Query port")
+	flag.StringVar(&port, "port", "8080", "Query port")
 	flag.Parse()
 
 	router := mux.NewRouter()
