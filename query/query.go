@@ -8,28 +8,27 @@ import (
 	"fmt"
 )
 
-func GetStatus(ip string, port string) Status {
+func GetStatus(ip string, port string) (Status, error) {
 	conn, connErr := net.Dial("udp", ip + ":" + port)
+	defer conn.Close()
 
 	if connErr != nil {
 		fmt.Println(ip, port)
 		fmt.Println(connErr)
-		return Status{}
+		return Status{}, connErr
 	}
-
-	defer conn.Close()
 
 	token, tokenErr := getToken(conn)
 	if tokenErr != nil && token != 0 {
-		return Status{}
+		return Status{}, tokenErr
 	}
 
 	resp, statsErr := getStats(conn, token)
 	if statsErr != nil {
-		return Status{}
+		return Status{}, statsErr
 	}
 
-	return parseResponse(resp)
+	return parseResponse(resp), nil
 }
 
 func getToken(conn net.Conn) (int32, error) {
