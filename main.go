@@ -6,10 +6,10 @@ import (
 	"flag"
 	"bufio"
 	"net/http"
+	"encoding/json"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/handlers"
 	"github.com/dags-/goquery/query"
-	"encoding/json"
 )
 
 type Response struct {
