@@ -4,6 +4,7 @@ import (
 	"os"
 	"fmt"
 	"flag"
+	"time"
 	"bufio"
 	"net/http"
 	"encoding/json"
@@ -13,7 +14,8 @@ import (
 )
 
 type Response struct {
-	Result interface{} `json:"result"`
+	Result string `json:"result"`
+	Time   string `json:"time"`
 	Data   interface{} `json:"data"`
 }
 
@@ -97,15 +99,14 @@ func serveDiscordStatus(wr http.ResponseWriter, rq *http.Request) {
 }
 
 func wrapResponse(data interface{}, err error) Response {
-	var result string
+	var result = "fail"
+	var timestamp = time.Now().Format(time.RFC822)
 
 	if err == nil {
 		result = "success"
-	} else {
-		result = "fail"
 	}
 
-	return Response{Result: result, Data: data}
+	return Response{Result: result, Time: timestamp, Data: data}
 }
 
 func writeResponse(resp Response, wr http.ResponseWriter, pretty bool) error {
@@ -114,10 +115,11 @@ func writeResponse(resp Response, wr http.ResponseWriter, pretty bool) error {
 		indent = "  "
 	}
 	wr.WriteHeader(http.StatusOK)
-	wr.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	wr.Header().Set("Cache-Control", "max-age=60")
+	wr.Header().Set("Content-Type", "application/json; charset=UTF-8")
+
 	encoder := json.NewEncoder(wr)
 	encoder.SetIndent(prefix, indent)
-	err := encoder.Encode(resp)
-	return err
+
+	return encoder.Encode(resp)
 }

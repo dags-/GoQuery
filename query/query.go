@@ -10,7 +10,10 @@ import (
 
 func GetStatus(ip string, port string) (Status, error) {
 	conn, connErr := net.Dial("udp", ip + ":" + port)
-	defer conn.Close()
+
+	if conn != nil {
+		defer conn.Close()
+	}
 
 	if connErr != nil {
 		fmt.Println(ip, port)
