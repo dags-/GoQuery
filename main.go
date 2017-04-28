@@ -113,6 +113,7 @@ func writeResponse(resp Response, wr http.ResponseWriter, pretty bool) error {
 	if pretty {
 		indent = "  "
 	}
+
 	wr.WriteHeader(http.StatusOK)
 	wr.Header().Set("Cache-Control", "max-age=60")
 	wr.Header().Set("Content-Type", "application/json; charset=UTF-8")

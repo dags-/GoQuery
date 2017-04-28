@@ -6,10 +6,17 @@ import (
 	"time"
 	"strings"
 	"fmt"
+	"net/http"
 )
 
 func GetStatus(ip string, port string) (Status, error) {
-	conn, connErr := net.Dial("udp", ip + ":" + port)
+	client := http.Transport{
+		Dial: (&net.Dialer{Timeout: 5 * time.Second, }).Dial,
+	}
+
+	defer client.CloseIdleConnections()
+
+	conn, connErr := client.Dial("udp", ip + ":" + port)
 
 	if conn != nil {
 		defer conn.Close()

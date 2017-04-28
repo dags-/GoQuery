@@ -7,7 +7,7 @@ import (
 	"sort"
 )
 
-const timeout = time.Duration(200 * time.Millisecond)
+const timeout = time.Duration(1 * time.Second)
 
 type Status struct {
 	Ip       string `json:"ip"`

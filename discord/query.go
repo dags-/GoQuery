@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"encoding/json"
 	"errors"
+	"time"
 )
 
 type Status map[string]interface{}
@@ -16,7 +17,11 @@ func GetStatus(serverId string) (Status, error) {
 	var status Status
 
 	url := fmt.Sprintf(api, serverId)
-	response, err := http.Get(url)
+	client := &http.Client{
+		Timeout: time.Second * 5,
+	}
+
+	response, err := client.Get(url)
 
 	if err == nil {
 		decoder := json.NewDecoder(response.Body)
