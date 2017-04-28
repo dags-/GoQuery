@@ -7,10 +7,12 @@ import (
 	"time"
 	"bufio"
 	"net/http"
+	"io/ioutil"
 	"encoding/json"
 	"github.com/gorilla/mux"
 	"github.com/gorilla/handlers"
-	"github.com/dags-/goquery/query"
+	"github.com/dags-/goquery/discord"
+	"github.com/dags-/goquery/minecraft"
 )
 
 type Response struct {
@@ -26,13 +28,20 @@ func main() {
 	flag.StringVar(&port, "port", "8080", "Query port")
 	flag.Parse()
 
+	notFound, readErr := ioutil.ReadFile("notfound.html")
+
 	router := mux.NewRouter()
-	router.HandleFunc("/status/{ip}", serveMincraftStatus)
-	router.HandleFunc("/status/{ip}/{port}", serveMincraftStatus)
-	router.HandleFunc("/discord/{id}", serveDiscordStatus)
-	router.NotFoundHandler = http.HandlerFunc(func(wr http.ResponseWriter, rq *http.Request) {
-		http.ServeFile(wr, rq, "notfound.html")
-	})
+	router.HandleFunc("/discord/{id}", discordHandler)
+	router.HandleFunc("/minecraft/{ip}", minecraftHandler)
+	router.HandleFunc("/minecraft/{ip}/{port}", minecraftHandler)
+
+	if readErr == nil {
+		router.NotFoundHandler = http.HandlerFunc(func(wr http.ResponseWriter, rq *http.Request) {
+			wr.Write(notFound)
+		})
+	} else {
+		fmt.Println(readErr)
+	}
 
 	fmt.Println("Launching on port", port)
 	err := http.ListenAndServe(":" + port, handlers.CORS()(router))
@@ -52,15 +61,13 @@ func handleStop() {
 	}
 }
 
-func serveMincraftStatus(wr http.ResponseWriter, rq *http.Request) {
+func minecraftHandler(wr http.ResponseWriter, rq *http.Request) {
 	var status goquery.Status
 	var err error
-	var pretty bool
 
 	vars := mux.Vars(rq)
 	if ip, ok := vars["ip"]; ok {
 		port := "25565"
-		pretty = rq.FormValue("pretty") == "true"
 
 		if _, ok := vars["port"]; ok {
 			port = vars["port"]
@@ -70,36 +77,28 @@ func serveMincraftStatus(wr http.ResponseWriter, rq *http.Request) {
 	}
 
 	response := wrapResponse(status, err)
+	pretty := rq.FormValue("pretty") == "true"
+
 	writeResponse(response, wr, pretty)
 }
 
-func serveDiscordStatus(wr http.ResponseWriter, rq *http.Request) {
-	var data map[string]interface{}
+func discordHandler(wr http.ResponseWriter, rq *http.Request) {
+	var data discord.Status
 	var err error
-	var pretty bool
 
 	vars := mux.Vars(rq)
 	if id, ok := vars["id"]; ok {
-		url := fmt.Sprintf("http://discordapp.com/api/guilds/%s/widget.json", id)
-		pretty = rq.FormValue("pretty") == "true"
-
-		var response *http.Response
-		response, err = http.Get(url)
-
-		defer response.Body.Close()
-
-		if err == nil {
-			decoder := json.NewDecoder(response.Body)
-			err = decoder.Decode(&data)
-		}
+		data, err = discord.GetStatus(id)
 	}
 
 	response := wrapResponse(data, err)
+	pretty := rq.FormValue("pretty") == "true"
+
 	writeResponse(response, wr, pretty)
 }
 
 func wrapResponse(data interface{}, err error) Response {
-	var result = "fail"
+	var result = fmt.Sprint(err)
 	var timestamp = time.Now().Format(time.RFC822)
 
 	if err == nil {

@@ -93,6 +93,7 @@ hr {
     padding-top: 4px;
     padding-bottom: 4px;
 }
+
     </style>
 </head>
 <body>
@@ -102,9 +103,9 @@ hr {
     <p>See the documentation below on how to use this service</p>
     <hr>
 </section>
-<section id="status" class="content">
+<section id="minecraft-status" class="content">
     <div class="sub-section">
-        <h2>Status API</h2>
+        <h2>Minecraft Status API</h2>
         <p>To use the server status API, the target server must have
             <code>enable-query</code> set to
             <code>true</code> in it's
@@ -122,11 +123,11 @@ hr {
                 <th>Description</th>
             </tr>
             <tr>
-                <td><code>https://dags.me&#8203;/status&#8203;/&lt;server_address&gt;</code></td>
+                <td><code>https://dags.me&#8203;/minecraft&#8203;/&lt;server_address&gt;</code></td>
                 <td>Query the status of the server at the given address, on the default port (<code>25565</code>)</td>
             </tr>
             <tr>
-                <td><code>https://dags.me&#8203;/status&#8203;/&lt;server_address&gt;&#8203;/&lt;port&gt;</code></td>
+                <td><code>https://dags.me&#8203;/minecraft&#8203;/&lt;server_address&gt;&#8203;/&lt;port&gt;</code></td>
                 <td>Query the status of the server at the given address, on the given port</td>
             </tr>
         </table>
@@ -145,12 +146,15 @@ hr {
     </div>
     <div class="sub-section">
         <h4>Sample URLs</h4>
-        <li><code>https://dags.me/status/example.com?pretty=true</code></li>
-        <li><code>https://dags.me/status/example.com/25575?pretty=true</code></li>
+        <li><code>https://dags.me/minecraft/example.com?pretty=true</code></li>
+        <li><code>https://dags.me/minecraft/example.com/25575?pretty=true</code></li>
         <h4>Sample Output</h4>
         <li><pre>
 <code><b>Pretty printed:</b>
 {
+  "result" : "success",
+  "time" : "28 Apr 17 07:35 UTC",
+  "data" : {
     "game_id": "MINECRAFT",
     "game_type": "SMP",
     "ip": "1.3.3.7",
@@ -159,16 +163,92 @@ hr {
     "motd": "A Minecraft server",
     "online": 2,
     "players": [
-        "bip",
-        "bap",
-        "bop"
+      "bip",
+      "bap",
+      "bop"
     ],
     "port": 25565,
     "version": "1.10.2"
+  }
+}
+</code></pre>
+        </li>
+    </div>
+</section>
+<section id="discord-status" class="content">
+    <div class="sub-section">
+        <h2>Discord Status API</h2>
+        <p>To use the server status API, the target discord server must have the server widget enabled.</p>
+        <p>
+            All requests start with one of the following URLs, and the optional queries can be used
+            to customize/filter the response.
+        </p>
+    </div>
+    <div class="sub-section">
+        <table>
+            <tr>
+                <th style="width:42.5%">URL</th>
+                <th>Description</th>
+            </tr>
+            <tr>
+                <td><code>https://dags.me&#8203;/discord&#8203;/&lt;server_id&gt;</code></td>
+                <td>Query the status of the server with the given server id</td>
+            </tr>
+        </table>
+        <table>
+            <tr>
+                <th>Query</th>
+                <th>Type</th>
+                <th>Description</th>
+            </tr>
+            <tr>
+                <td><code>pretty=</code></td>
+                <td><code>true/false</code></td>
+                <td>Specify whether the returned json should be pretty printed (default is false)</td>
+            </tr>
+        </table>
+    </div>
+    <div class="sub-section">
+        <h4>Sample URLs</h4>
+        <li><code>https://dags.me/discord/207677939146424331?pretty=true</code></li>
+        <h4>Sample Output</h4>
+        <li><pre>
+<code><b>Pretty printed:</b>
+{
+  "result": "success",
+  "time": "28 Apr 17 07:57 UTC",
+  "data": {
+    "channels": [
+      {
+        "id": "channel_id",
+        "name": "channel_name",
+        "position": "channel_position"
+      }
+    ],
+    "id": "server_id",
+    "instant_invite": "url",
+    "members": [
+      {
+        "avatar": "avatar_id",
+        "avatar_url": "avatar_url",
+        "discriminator": "user_discriminator",
+        "game": {
+           "name": "game_status"
+        },
+        "id": "user_id",
+        "nick": "nickname",
+        "status": "online_status",
+        "username": "username"
+      }
+    ],
+    "name": "server_name"
+  }
 }</code></pre>
         </li>
     </div>
 </section>
+
+
 <div class="padding"></div>
 <div>
     <footer>
