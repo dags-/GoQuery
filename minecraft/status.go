@@ -1,56 +1,31 @@
 package goquery
 
 import (
-	"time"
-	"encoding/json"
 	"io"
 	"sort"
+	"encoding/json"
 )
 
-const timeout = time.Duration(1 * time.Second)
+type Status map[string]interface{}
 
-type Status struct {
-	Ip       string `json:"ip"`
-	Port     int32 `json:"port"`
-	Motd     string `json:"motd"`
-	GameType string `json:"gametype"`
-	GameId   string `json:"gameid"`
-	Version  string `json:"version"`
-	Plugins  string `json:"plugins"`
-	Map      string `json:"map"`
-	Online   int32 `json:"online"`
-	Max      int32 `json:"max"`
-	Players  []string `json:"players"`
-}
-
-func (status *Status) SetValue(key string, value string) {
+func (status Status) SetValue(key string, value string) {
 	switch key {
-	case "hostname":
-		status.Motd = value
-	case "gametype":
-		status.GameType = value
-	case "game_id":
-		status.GameId = value
-	case "version":
-		status.Version = value
-	case "plugins":
-		status.Plugins = value
-	case "map":
-		status.Map = value
 	case "numplayers":
-		status.Online = parseInt(value)
+		status["online"] = parseInt(value)
 	case "maxplayers":
-		status.Max = parseInt(value)
+		status["max"] = parseInt(value)
 	case "hostport":
-		status.Port = parseInt(value)
+		status["port"] = parseInt(value)
 	case "hostip":
-		status.Ip = value
+		status["ip"] = value
+	default:
+		status[key] = value
 	}
 }
 
-func (status *Status) SetPlayers(players []string) {
+func (status Status) SetPlayers(players []string) {
 	sort.Strings(players)
-	status.Players = players
+	status["players"] = players
 }
 
 func (status *Status) ToJson(wr io.Writer, pretty bool) error {

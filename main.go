@@ -80,6 +80,7 @@ func minecraftHandler(wr http.ResponseWriter, rq *http.Request) {
 	pretty := rq.FormValue("pretty") == "true"
 
 	writeResponse(response, wr, pretty)
+	return
 }
 
 func discordHandler(wr http.ResponseWriter, rq *http.Request) {
@@ -95,6 +96,7 @@ func discordHandler(wr http.ResponseWriter, rq *http.Request) {
 	pretty := rq.FormValue("pretty") == "true"
 
 	writeResponse(response, wr, pretty)
+	return
 }
 
 func wrapResponse(data interface{}, err error) Response {

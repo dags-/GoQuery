@@ -2,10 +2,10 @@ package discord
 
 import (
 	"fmt"
+	"bytes"
+	"errors"
 	"net/http"
 	"encoding/json"
-	"errors"
-	"time"
 )
 
 type Status map[string]interface{}
@@ -17,19 +17,17 @@ func GetStatus(serverId string) (Status, error) {
 	var status Status
 
 	url := fmt.Sprintf(api, serverId)
-	client := &http.Client{
-		Timeout: time.Second * 5,
-	}
+	request, err := http.NewRequest("GET", url, &bytes.Buffer{})
+	request.Header.Set("Connection", "close")
 
-	response, err := client.Get(url)
+	resp, err := http.DefaultClient.Do(request)
+	request.Close = true
+	request.Body.Close()
 
 	if err == nil {
-		decoder := json.NewDecoder(response.Body)
+		decoder := json.NewDecoder(resp.Body)
 		err = decoder.Decode(&status)
-	}
-
-	if response != nil {
-		response.Body.Close()
+		resp.Body.Close()
 	}
 
 	if message, ok := status["message"]; ok {

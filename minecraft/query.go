@@ -1,81 +1,77 @@
 package goquery
 
 import (
-	"strconv"
 	"net"
 	"time"
 	"strings"
-	"fmt"
-	"net/http"
+	"strconv"
 )
 
+const timeout = time.Duration(1 * time.Second)
+
 func GetStatus(ip string, port string) (Status, error) {
-	client := http.Transport{
-		Dial: (&net.Dialer{Timeout: 5 * time.Second, }).Dial,
+	var status Status
+	var token int32
+
+	conn, err := net.DialTimeout("udp", ip + ":" + port, timeout)
+
+	if err == nil {
+		token, err = getToken(conn)
 	}
 
-	defer client.CloseIdleConnections()
-
-	conn, connErr := client.Dial("udp", ip + ":" + port)
+	if token != 0 {
+		resp, err := getStats(conn, token)
+		if err == nil {
+			status = parseResponse(resp)
+		}
+	}
 
 	if conn != nil {
-		defer conn.Close()
+		conn.Close()
 	}
 
-	if connErr != nil {
-		fmt.Println(ip, port)
-		fmt.Println(connErr)
-		return Status{}, connErr
-	}
-
-	token, tokenErr := getToken(conn)
-	if tokenErr != nil && token != 0 {
-		return Status{}, tokenErr
-	}
-
-	resp, statsErr := getStats(conn, token)
-	if statsErr != nil {
-		return Status{}, statsErr
-	}
-
-	return parseResponse(resp), nil
+	return status, err
 }
 
 func getToken(conn net.Conn) (int32, error) {
+	var token int32
+
 	conn.SetWriteDeadline(time.Now().Add(timeout))
 
-	_, writeError := conn.Write(NewHandshake().ToBytes())
-	if writeError != nil {
-		return 0, writeError
+	_, err := conn.Write(NewHandshake().ToBytes())
+	if err == nil {
+		buff := make([]byte, 32)
+
+		conn.SetReadDeadline(time.Now().Add(timeout))
+		count, err := conn.Read(buff)
+
+		if err == nil {
+			length := 5
+			for ; (length < count) && (buff[length] != 0); length++ {}
+			token = parseInt(string(buff[5:length]))
+		}
 	}
 
-	buff := make([]byte, 32)
-	conn.SetReadDeadline(time.Now().Add(timeout))
-	count, readErr := conn.Read(buff)
-	if readErr != nil || count == 0 {
-		return 0, readErr
-	}
-
-	length := 5
-	for ; (length < count) && (buff[length] != 0); length++ {}
-
-	return parseInt(string(buff[5:length])), nil
+	return token, err
 }
 
 func getStats(conn net.Conn, token int32) (string, error) {
-	_, writeErr := conn.Write(NewStatusQuery(token).ToBytes())
-	if writeErr != nil {
-		return "", writeErr
+	var stats string
+	var err error
+
+	conn.SetWriteDeadline(time.Now().Add(timeout))
+	_, err = conn.Write(NewStatusQuery(token).ToBytes())
+
+	if err == nil {
+		buff := make([]byte, 8196)
+		conn.SetReadDeadline(time.Now().Add(timeout))
+		count, err := conn.Read(buff)
+		if err == nil {
+			stats = string(buff[16:count])
+		}
 	}
 
-	buff := make([]byte, 8196)
-	conn.SetReadDeadline(time.Now().Add(timeout))
-	count, readErr := conn.Read(buff)
-	if readErr != nil || count == 0 {
-		return "", readErr
-	}
-
-	return string(buff[16:count]), nil
+	return stats, err
 }
 
 func parseResponse(response string) Status {
