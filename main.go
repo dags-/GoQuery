@@ -9,10 +9,10 @@ import (
 	"net/http"
 	"io/ioutil"
 	"encoding/json"
-	"github.com/gorilla/mux"
-	"github.com/gorilla/handlers"
+	"github.com/valyala/fasthttp"
 	"github.com/dags-/goquery/discord"
 	"github.com/dags-/goquery/minecraft"
+	"github.com/qiangxue/fasthttp-routing"
 )
 
 type Response struct {
@@ -30,23 +30,26 @@ func main() {
 
 	notFound, readErr := ioutil.ReadFile("notfound.html")
 
-	router := mux.NewRouter()
-	router.HandleFunc("/discord/{id}", discordHandler)
-	router.HandleFunc("/minecraft/{ip}", minecraftHandler)
-	router.HandleFunc("/minecraft/{ip}/{port}", minecraftHandler)
+	router := routing.New()
+
+	router.Get("/discord/<id>", discordHandler)
+	router.Get("/minecraft/<ip>", minecraftHandler)
+	router.Get("/minecraft/<ip>/<port>", minecraftHandler)
 
 	if readErr == nil {
-		router.NotFoundHandler = http.HandlerFunc(func(wr http.ResponseWriter, rq *http.Request) {
-			wr.Write(notFound)
+		router.NotFound(func(c *routing.Context) error {
+			c.Response.Header.SetContentType("text/html")
+			_, err := c.Response.BodyWriter().Write(notFound)
+			return err
 		})
 	} else {
 		fmt.Println(readErr)
 	}
 
 	fmt.Println("Launching on port", port)
-	err := http.ListenAndServe(":" + port, handlers.CORS()(router))
-	fmt.Println(err)
+	panic(fasthttp.ListenAndServe(":8080", router.HandleRequest))
 }
+
 
 func handleStop() {
 	reader := bufio.NewReader(os.Stdin)
@@ -61,42 +64,25 @@ func handleStop() {
 	}
 }
 
-func minecraftHandler(wr http.ResponseWriter, rq *http.Request) {
-	var status goquery.Status
-	var err error
+func minecraftHandler(c *routing.Context) error {
+	ip := c.Param("ip")
+	port := c.Param("port")
 
-	vars := mux.Vars(rq)
-	if ip, ok := vars["ip"]; ok {
-		port := "25565"
-
-		if _, ok := vars["port"]; ok {
-			port = vars["port"]
-		}
-
-		status, err = goquery.GetStatus(ip, port)
+	if port == "" {
+		port = "25565"
 	}
 
+	status, err := goquery.GetStatus(ip, port)
 	response := wrapResponse(status, err)
-	pretty := rq.FormValue("pretty") == "true"
 
-	writeResponse(response, wr, pretty)
-	return
+	return writeResponse(response, c)
 }
 
-func discordHandler(wr http.ResponseWriter, rq *http.Request) {
-	var data discord.Status
-	var err error
-
-	vars := mux.Vars(rq)
-	if id, ok := vars["id"]; ok {
-		data, err = discord.GetStatus(id)
-	}
-
+func discordHandler(c *routing.Context) error {
+	id := c.Param("id")
+	data, err := discord.GetStatus(id)
 	response := wrapResponse(data, err)
-	pretty := rq.FormValue("pretty") == "true"
-
-	writeResponse(response, wr, pretty)
-	return
+	return writeResponse(response, c)
 }
 
 func wrapResponse(data interface{}, err error) Response {
@@ -110,17 +96,17 @@ func wrapResponse(data interface{}, err error) Response {
 	return Response{Result: result, Time: timestamp, Data: data}
 }
 
-func writeResponse(resp Response, wr http.ResponseWriter, pretty bool) error {
+func writeResponse(resp Response, c *routing.Context) error {
 	var prefix, indent = "", ""
-	if pretty {
+	if string(c.FormValue("pretty")) == "true" {
 		indent = "  "
 	}
 
-	wr.WriteHeader(http.StatusOK)
-	wr.Header().Set("Cache-Control", "max-age=60")
-	wr.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	c.Response.Header.SetStatusCode(http.StatusOK)
+	c.Response.Header.Set("Cache-Control", "max-age=60")
+	c.Response.Header.SetContentType("application/json; charset=UTF-8")
 
-	encoder := json.NewEncoder(wr)
+	encoder := json.NewEncoder(c.Response.BodyWriter())
 	encoder.SetIndent(prefix, indent)
 
 	return encoder.Encode(resp)
