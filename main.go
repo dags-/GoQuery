@@ -102,6 +102,7 @@ func writeResponse(resp Response, c *routing.Context) error {
 
 	c.Response.Header.SetStatusCode(http.StatusOK)
 	c.Response.Header.Set("Cache-Control", "max-age=60")
+	c.Response.Header.Set("Access-Control-Allow-Origin", "*")
 	c.Response.Header.SetContentType("application/json; charset=UTF-8")
 
 	encoder := json.NewEncoder(c.Response.BodyWriter())
