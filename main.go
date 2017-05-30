@@ -52,11 +52,9 @@ func main() {
 
 
 func handleStop() {
-	reader := bufio.NewReader(os.Stdin)
-	for {
-		text, _ := reader.ReadString('\n')
-		if text == "stop\n" {
-			fmt.Println()
+	scanner := bufio.NewScanner(os.Stdin)
+	for scanner.Scan() {
+		if scanner.Text() == "stop" {
 			fmt.Println("Stopping...")
 			os.Exit(0)
 			break
