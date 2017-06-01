@@ -29,6 +29,6 @@ func main() {
 	var port string
 	flag.StringVar(&port, "port", "8080", "Query port")
 	flag.Parse()
-	fmt.Printf("Launcing on port %v", port)
+	fmt.Printf("Launcing on port %v\n", port)
 	server.StartServer(port)
 }
