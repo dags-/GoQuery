@@ -18,6 +18,8 @@ type Response struct {
 	Data   interface{} `json:"data"`
 }
 
+var empty = map[string]string{}
+
 func StartServer(port string) {
 	notFound, readErr := ioutil.ReadFile("notfound.html")
 
@@ -40,11 +42,11 @@ func StartServer(port string) {
 		Handler: router.HandleRequest,
 		GetOnly: true,
 		DisableKeepalive: true,
-		ReadBufferSize: 8192,
+		ReadBufferSize: 10240,
 		WriteBufferSize: 25600,
 		ReadTimeout: time.Duration(time.Second * 2),
 		WriteTimeout: time.Duration(time.Second * 2),
-		MaxConnsPerIP: 5,
+		MaxConnsPerIP: 3,
 		MaxRequestsPerConn: 1,
 		MaxRequestBodySize: 0,
 	}
@@ -74,11 +76,14 @@ func discordHandler(c *routing.Context) error {
 }
 
 func wrapResponse(data interface{}, err error) Response {
-	var result = fmt.Sprint(err)
+	var result string
 	var timestamp = time.Now().Format(time.RFC822)
 
 	if err == nil {
 		result = "success"
+	} else {
+		result = fmt.Sprint(err)
+		data = empty
 	}
 
 	return Response{Result: result, Time: timestamp, Data: data}
@@ -91,7 +96,6 @@ func writeResponse(resp Response, c *routing.Context) error {
 	}
 
 	c.Response.Header.SetStatusCode(http.StatusOK)
-	c.Response.Header.Set("Cache-Control", "max-age=60")
 	c.Response.Header.Set("Access-Control-Allow-Origin", "*")
 	c.Response.Header.SetContentType("application/json; charset=UTF-8")
 

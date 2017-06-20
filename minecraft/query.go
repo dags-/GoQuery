@@ -1,10 +1,12 @@
 package goquery
 
 import (
+	"fmt"
 	"net"
 	"time"
 	"strings"
 	"strconv"
+	"github.com/pkg/errors"
 )
 
 const timeout = time.Duration(1 * time.Second)
@@ -13,13 +15,14 @@ func GetStatus(ip string, port string) (Status, error) {
 	var status Status
 	var token int32
 
-	conn, err := net.DialTimeout("udp", ip + ":" + port, timeout)
-
+	conn, err := net.Dial("udp", fmt.Sprint(ip, ":", port))
 	if err == nil {
 		token, err = getToken(conn)
 	}
 
-	if token != 0 {
+	if token == 0 {
+		err = errors.New("Handshake with server failed")
+	} else {
 		resp, err := getStats(conn, token)
 		if err == nil {
 			status = parseResponse(resp)
